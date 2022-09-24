@@ -75,7 +75,8 @@ impl Instruction {
     }
   }
 
-  /// Returns the instructions RIP operand displacement if applicable.
+  /// Returns the instructions RIP operand displacement and the offset of the
+  /// displacement if applicable.
   pub fn rip_operand_displacement(&self) -> Option<isize> {
     unsafe {
       // The operands displacement (e.g `mov eax, [rip+0x10]` ⟶ 0x10)

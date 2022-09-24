@@ -155,6 +155,12 @@ impl Builder {
       move |offset| {
         let mut bytes = instruction_bytes.clone();
 
+        let old_displacement_bytes: [u8; 4] = mem::transmute(displacement as u32);
+        let displacement_offset = bytes
+          .windows(4)
+          .position(|window| window == old_displacement_bytes)
+          .unwrap();
+
         // Calculate the new relative displacement for the operand. The
         // instruction is relative so the offset (i.e where the trampoline is
         // allocated), must be within a range of +/- 2GB.
@@ -163,12 +169,9 @@ impl Builder {
           .wrapping_add(displacement);
         assert!(crate::arch::is_within_range(adjusted_displacement));
 
-        // The displacement value is placed at (instruction - disp32)
-        let index = instruction_bytes.len() - mem::size_of::<u32>();
-
         // Write the adjusted displacement offset to the operand
         let as_bytes: [u8; 4] = mem::transmute(adjusted_displacement as u32);
-        bytes[index..instruction_bytes.len()].copy_from_slice(&as_bytes);
+        bytes[displacement_offset..displacement_offset + as_bytes.len()].copy_from_slice(&as_bytes);
         bytes
       },
       instruction.len(),
